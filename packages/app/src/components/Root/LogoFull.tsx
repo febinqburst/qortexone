@@ -8,7 +8,13 @@ const useStyles = makeStyles({
   },
   text: {
     fill: '#7df3e1',
-    fontSize: '18px',
+    fontSize: '20px',
+    fontWeight: 'bold',
+    fontFamily: 'Arial, sans-serif',
+  },
+  qText: {
+    fill: '#ff0000',
+    fontSize: '20px',
     fontWeight: 'bold',
     fontFamily: 'Arial, sans-serif',
   },
@@ -23,8 +29,11 @@ const LogoFull = () => {
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 200 30"
     >
-      <text x="10" y="22" className={classes.text}>
-        QortexOne
+      <text x="10" y="22" className={classes.qText}>
+        Q
+      </text>
+      <text x="30" y="22" className={classes.text}>
+        ortexOne
       </text>
     </svg>
   );
