@@ -16,16 +16,6 @@ spec:
   type: team
   children: []
 ---
-apiVersion: backstage.io/v1alpha1
-kind: User
-metadata:
-  name: febin.m
-spec:
-  memberOf: []
-  profile:
-    displayName: Febin Mathew
-    email: febin.m@qburst.com
----
 # This file might already contain example groups or users
 apiVersion: backstage.io/v1alpha1
 kind: Group
@@ -44,14 +34,14 @@ spec:
   profile:
     displayName: Febin Mathew
     email: febin.m@qburst.com
-  memberOf: [default/devops]
+  memberOf: [devops]
 ---
 # This file might already contain example groups or users
 apiVersion: backstage.io/v1alpha1
 kind: Group
 metadata:
-  name: default/devops
-  description: devops app
+  name: devops
+  description: devops team
 spec:
   type: team
   children: []
@@ -64,4 +54,4 @@ spec:
   profile:
     displayName: Sudheer Nambiar
     email: sudheer.kandath@qburst.com
-  memberOf: [default/devops]
+  memberOf: [devops]
