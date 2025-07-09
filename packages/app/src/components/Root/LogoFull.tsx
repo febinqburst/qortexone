@@ -4,17 +4,17 @@ import { makeStyles } from '@material-ui/core';
 const useStyles = makeStyles({
   svg: {
     width: 'auto',
-    height: 30,
+    height: 34,
   },
   text: {
     fill: '#7df3e1',
-    fontSize: '20px',
+    fontSize: '24px',
     fontWeight: 'bold',
     fontFamily: 'Arial, sans-serif',
   },
   qText: {
     fill: '#ff0000',
-    fontSize: '20px',
+    fontSize: '24px',
     fontWeight: 'bold',
     fontFamily: 'Arial, sans-serif',
   },
@@ -32,7 +32,7 @@ const LogoFull = () => {
       <text x="10" y="22" className={classes.qText}>
         Q
       </text>
-      <text x="30" y="22" className={classes.text}>
+      <text x="25" y="22" className={classes.text}>
         ortexOne
       </text>
     </svg>
