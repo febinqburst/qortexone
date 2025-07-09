@@ -32,7 +32,7 @@ const LogoFull = () => {
       <text x="10" y="22" className={classes.qText}>
         Q
       </text>
-      <text x="25" y="22" className={classes.text}>
+      <text x="28" y="22" className={classes.text}>
         ortexOne
       </text>
     </svg>
