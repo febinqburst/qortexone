@@ -1,0 +1,67 @@
+---
+# https://backstage.io/docs/features/software-catalog/descriptor-format#kind-user
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: guest
+spec:
+  memberOf: [guests]
+---
+# https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: guests
+spec:
+  type: team
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: febin.m
+spec:
+  memberOf: []
+  profile:
+    displayName: Febin Mathew
+    email: febin.m@qburst.com
+---
+# This file might already contain example groups or users
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: infrastructure
+  description: The infrastructure team
+spec:
+  type: team
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: febinqburst
+spec:
+  profile:
+    displayName: Febin Mathew
+    email: febin.m@qburst.com
+  memberOf: [default/devops]
+---
+# This file might already contain example groups or users
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: default/devops
+  description: devops app
+spec:
+  type: team
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: sudheernambiar
+spec:
+  profile:
+    displayName: Sudheer Nambiar
+    email: sudheer.kandath@qburst.com
+  memberOf: [default/devops]
