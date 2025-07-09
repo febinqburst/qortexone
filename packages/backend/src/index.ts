@@ -7,7 +7,8 @@
  */
 
 import { createBackend } from '@backstage/backend-defaults';
-import { createBackendModule } from '@backstage/backend-plugin-api';
+import { usersPlugin } from './plugins/users';
+
 const backend = createBackend();
 
 backend.add(import('@backstage/plugin-app-backend'));
@@ -53,5 +54,8 @@ backend.add(import('@backstage/plugin-search-backend-module-techdocs'));
 
 // kubernetes
 backend.add(import('@backstage/plugin-kubernetes-backend'));
+
+// users plugin
+backend.add(usersPlugin);
 
 backend.start();
