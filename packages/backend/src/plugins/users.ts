@@ -1,7 +1,6 @@
 import { createBackendModule } from '@backstage/backend-plugin-api';
 import { Router } from 'express';
 import { z } from 'zod';
-import { Entity } from '@backstage/catalog-model';
 
 // User schema for validation
 const UserSchema = z.object({
@@ -16,27 +15,6 @@ type User = z.infer<typeof UserSchema>;
 // In-memory storage (in production, you'd use a database)
 const users: User[] = [];
 
-// Helper function to create a catalog entity from user data
-function createUserEntity(user: User): Entity {
-  return {
-    apiVersion: 'backstage.io/v1alpha1',
-    kind: 'User',
-    metadata: {
-      name: user.name,
-      annotations: {
-        'backstage.io/managed-by-location': 'users-plugin',
-      },
-    },
-    spec: {
-      profile: {
-        displayName: user.displayName,
-        email: user.email,
-      },
-      memberOf: user.memberOf ? [user.memberOf] : [],
-    },
-  };
-}
-
 export const usersPlugin = createBackendModule({
   pluginId: 'users',
   register(reg) {
@@ -44,18 +22,17 @@ export const usersPlugin = createBackendModule({
       deps: {
         logger: 'core.logger',
         httpRouter: 'core.httpRouter',
-        catalog: 'plugin.catalog.service',
       },
-      async init({ logger, httpRouter, catalog }) {
+      async init({ logger, httpRouter }) {
         const router = Router();
 
-        // GET /api/users - List all users
+        // GET /api/backend/users - List all users
         router.get('/users', (_, res) => {
           logger.info('Retrieved all users');
           res.json(users);
         });
 
-        // POST /api/users - Create a new user
+        // POST /api/backend/users - Create a new user
         router.post('/users', async (req, res) => {
           try {
             // Validate the request body
@@ -82,19 +59,6 @@ export const usersPlugin = createBackendModule({
             // Add user to storage
             users.push(validatedUser);
             
-            // Create catalog entity and register it
-            try {
-              const userEntity = createUserEntity(validatedUser);
-              await catalogClient.createEntity(userEntity);
-              logger.info('User registered in catalog', { username: validatedUser.name });
-            } catch (catalogError) {
-              logger.warn('Failed to register user in catalog', { 
-                username: validatedUser.name, 
-                error: catalogError 
-              });
-              // Don't fail the request if catalog registration fails
-            }
-            
             logger.info('Created new user', { username: validatedUser.name });
             
             res.status(201).json({
@@ -118,7 +82,7 @@ export const usersPlugin = createBackendModule({
           }
         });
 
-        // GET /api/users/:name - Get a specific user
+        // GET /api/backend/users/:name - Get a specific user
         router.get('/users/:name', (req, res) => {
           const { name } = req.params;
           const user = users.find(u => u.name === name);
@@ -133,7 +97,7 @@ export const usersPlugin = createBackendModule({
           res.json(user);
         });
 
-        // DELETE /api/users/:name - Delete a user
+        // DELETE /api/backend/users/:name - Delete a user
         router.delete('/users/:name', async (req, res) => {
           const { name } = req.params;
           const userIndex = users.findIndex(u => u.name === name);
@@ -147,18 +111,6 @@ export const usersPlugin = createBackendModule({
           
           const deletedUser = users.splice(userIndex, 1)[0];
           
-          // Remove from catalog if possible
-          try {
-            await catalogClient.removeEntityByUid(`user:default/${name}`);
-            logger.info('User removed from catalog', { username: deletedUser.name });
-          } catch (catalogError) {
-            logger.warn('Failed to remove user from catalog', { 
-              username: deletedUser.name, 
-              error: catalogError 
-            });
-            // Don't fail the request if catalog removal fails
-          }
-          
           logger.info('Deleted user', { username: deletedUser.name });
           
           res.json({
@@ -167,7 +119,7 @@ export const usersPlugin = createBackendModule({
           });
         });
 
-        // PUT /api/users/:name - Update a user
+        // PUT /api/backend/users/:name - Update a user
         router.put('/users/:name', async (req, res) => {
           try {
             const { name } = req.params;
@@ -197,18 +149,6 @@ export const usersPlugin = createBackendModule({
             // Update user
             users[userIndex] = validatedUser;
             
-            // Update catalog entity
-            try {
-              const userEntity = createUserEntity(validatedUser);
-              await catalogClient.createEntity(userEntity);
-              logger.info('User updated in catalog', { username: validatedUser.name });
-            } catch (catalogError) {
-              logger.warn('Failed to update user in catalog', { 
-                username: validatedUser.name, 
-                error: catalogError 
-              });
-            }
-            
             logger.info('Updated user', { username: validatedUser.name });
             
             res.json({
@@ -232,7 +172,8 @@ export const usersPlugin = createBackendModule({
           }
         });
 
-        httpRouter.use('/users', router);
+        // Mount the router - this should make the endpoints available at /api/backend/users
+        httpRouter.use(router);
       },
     });
   },
