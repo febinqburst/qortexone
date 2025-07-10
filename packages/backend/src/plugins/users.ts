@@ -1,5 +1,5 @@
-import { createBackendPlugin } from '@backstage/backend-plugin-api';
-import { loggerToWinstonLogger } from '@backstage/backend-common';
+import { createBackendModule } from '@backstage/backend-plugin-api';
+import { createRouter } from '@backstage/backend-common';
 import { Router } from 'express';
 import { z } from 'zod';
 import { CatalogClient } from '@backstage/catalog-client';
@@ -39,24 +39,17 @@ function createUserEntity(user: User): Entity {
   };
 }
 
-export const usersPlugin = createBackendPlugin({
+export const usersPlugin = createBackendModule({
   pluginId: 'users',
-  register(env) {
-    env.registerInit({
+  register(reg) {
+    reg.registerInit({
       deps: {
         logger: 'core.logger',
         httpRouter: 'core.httpRouter',
-        config: 'core.config',
-        discovery: 'core.discovery',
+        catalogClient: 'plugin.catalog.client',
       },
-      async init({ logger, httpRouter, config, discovery }) {
+      async init({ logger, httpRouter, catalogClient }) {
         const router = Router();
-        const winstonLogger = loggerToWinstonLogger(logger);
-
-        // Initialize catalog client
-        const catalogClient = new CatalogClient({
-          discoveryApi: discovery,
-        });
 
         // GET /api/users - List all users
         router.get('/users', (_, res) => {
@@ -241,12 +234,7 @@ export const usersPlugin = createBackendPlugin({
           }
         });
 
-        // Register the router
-        httpRouter.use('/api/users', router);
-        httpRouter.addAuthPolicy({
-          path: '/api/users',
-          allow: 'unauthenticated',
-        });
+        httpRouter.use(router);
       },
     });
   },
