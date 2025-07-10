@@ -22,7 +22,7 @@ node_modules/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-yarn.lock
+
 # Node version directives
 .nvmrc
 
