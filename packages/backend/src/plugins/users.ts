@@ -1,6 +1,8 @@
 import { createBackendModule } from '@backstage/backend-plugin-api';
+import { createRouter } from '@backstage/backend-common';
 import { Router } from 'express';
 import { z } from 'zod';
+import { CatalogClient } from '@backstage/catalog-client';
 import { Entity } from '@backstage/catalog-model';
 
 // User schema for validation
@@ -44,9 +46,9 @@ export const usersPlugin = createBackendModule({
       deps: {
         logger: 'core.logger',
         httpRouter: 'core.httpRouter',
-        catalog: 'plugin.catalog.service',
+        catalogClient: 'plugin.catalog.client',
       },
-      async init({ logger, httpRouter, catalog }) {
+      async init({ logger, httpRouter, catalogClient }) {
         const router = Router();
 
         // GET /api/users - List all users
@@ -232,7 +234,7 @@ export const usersPlugin = createBackendModule({
           }
         });
 
-        httpRouter.use('/users', router);
+        httpRouter.use(router);
       },
     });
   },
