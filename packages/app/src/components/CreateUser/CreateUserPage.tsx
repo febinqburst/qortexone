@@ -127,7 +127,7 @@ const CreateUserPage = () => {
 
     try {
       const baseUrl = await discoveryApi.getBaseUrl('backend');
-      const response = await fetch(`${baseUrl}/api/users`, {
+      const response = await fetch(`${baseUrl}/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
