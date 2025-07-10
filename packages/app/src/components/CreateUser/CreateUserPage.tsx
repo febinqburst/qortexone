@@ -10,13 +10,11 @@ import {
   createStyles,
   Snackbar,
   Alert,
-  Box,
-  Card,
-  CardContent,
-  IconButton,
+  CircularProgress,
 } from '@material-ui/core';
 import { Content, Header, Page } from '@backstage/core-components';
-import { FileCopy as FileCopyIcon } from '@material-ui/icons';
+import { useApi } from '@backstage/core-plugin-api';
+import { discoveryApiRef } from '@backstage/core-plugin-api';
 
 interface UserFormData {
   name: string;
@@ -48,31 +46,12 @@ const useStyles = makeStyles((theme: Theme) =>
       fontSize: '0.75rem',
       marginTop: theme.spacing(0.5),
     },
-    yamlOutput: {
-      backgroundColor: theme.palette.grey[100],
-      padding: theme.spacing(2),
-      fontFamily: 'monospace',
-      fontSize: '0.875rem',
-      borderRadius: theme.shape.borderRadius,
-      border: `1px solid ${theme.palette.divider}`,
-      whiteSpace: 'pre-wrap',
-      wordBreak: 'break-all',
-      position: 'relative',
-    },
-    copyButton: {
-      position: 'absolute',
-      top: theme.spacing(1),
-      right: theme.spacing(1),
-    },
-    instructionsCard: {
-      marginTop: theme.spacing(3),
-      backgroundColor: theme.palette.info.light,
-    },
   }),
 );
 
 const CreateUserPage = () => {
   const classes = useStyles();
+  const discoveryApi = useApi(discoveryApiRef);
   const [formData, setFormData] = useState<UserFormData>({
     name: '',
     displayName: '',
@@ -80,11 +59,11 @@ const CreateUserPage = () => {
     memberOf: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
-  const [generatedYaml, setGeneratedYaml] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
-    severity: 'success' | 'error' | 'info';
+    severity: 'success' | 'error';
   }>({
     open: false,
     message: '',
@@ -137,20 +116,6 @@ const CreateUserPage = () => {
     }
   };
 
-  const generateYaml = (userData: UserFormData): string => {
-    const memberOfLine = userData.memberOf ? `  memberOf: [${userData.memberOf}]` : '';
-    
-    return `---
-apiVersion: backstage.io/v1alpha1
-kind: User
-metadata:
-  name: ${userData.name}
-spec:
-  profile:
-    displayName: ${userData.displayName}
-    email: ${userData.email}${memberOfLine ? '\n' + memberOfLine : ''}`;
-  };
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     
@@ -158,42 +123,60 @@ spec:
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      const yamlContent = generateYaml(formData);
-      setGeneratedYaml(yamlContent);
-      
+      const baseUrl = await discoveryApi.getBaseUrl('backend');
+      const response = await fetch(`${baseUrl}/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      // Handle 404 specifically
+      if (response.status === 404) {
+        throw new Error('Users API endpoint not found. Please install backend dependencies and redeploy: yarn workspace backend add @backstage/backend-plugin-api express @types/express');
+      }
+
+      // Try to parse JSON response
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        // If JSON parsing fails, create a generic error message
+        throw new Error(`Server error (${response.status}): ${response.statusText}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(result.message || `Failed to create user (${response.status})`);
+      }
+
       // Success
       setSnackbar({
         open: true,
-        message: 'User YAML generated successfully! Follow the instructions below to add the user to your catalog.',
+        message: 'User created successfully!',
         severity: 'success',
       });
 
-    } catch (error) {
-      console.error('Error generating YAML:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to generate user YAML',
-        severity: 'error',
+      // Reset form
+      setFormData({
+        name: '',
+        displayName: '',
+        email: '',
+        memberOf: '',
       });
-    }
-  };
 
-  const handleCopyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(generatedYaml);
-      setSnackbar({
-        open: true,
-        message: 'YAML copied to clipboard!',
-        severity: 'info',
-      });
     } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
+      console.error('Error creating user:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to copy to clipboard',
+        message: error instanceof Error ? error.message : 'Failed to create user',
         severity: 'error',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -206,18 +189,18 @@ spec:
       <Header title="Create User" />
       <Content>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={8} lg={10}>
+          <Grid item xs={12} md={8} lg={6}>
             <Paper className={classes.root}>
               <Typography variant="h5" gutterBottom>
                 Create New User
               </Typography>
               <Typography variant="body2" color="textSecondary" paragraph>
-                Fill in the details below to generate a user YAML that can be added to your Backstage catalog.
+                Fill in the details below to create a new user in the system.
               </Typography>
               
               <form onSubmit={handleSubmit} className={classes.form}>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12}>
                     <TextField
                       name="name"
                       label="Username"
@@ -227,10 +210,11 @@ spec:
                       required
                       error={!!errors.name}
                       helperText={errors.name || "Unique username for the user (letters, numbers, hyphens, underscores only)"}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                   
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12}>
                     <TextField
                       name="displayName"
                       label="Display Name"
@@ -240,10 +224,11 @@ spec:
                       required
                       error={!!errors.displayName}
                       helperText={errors.displayName || "Full name to display"}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                   
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12}>
                     <TextField
                       name="email"
                       label="Email"
@@ -254,10 +239,11 @@ spec:
                       required
                       error={!!errors.email}
                       helperText={errors.email || "User's email address"}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                   
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12}>
                     <TextField
                       name="memberOf"
                       label="Member Of (Group)"
@@ -266,6 +252,7 @@ spec:
                       fullWidth
                       error={!!errors.memberOf}
                       helperText={errors.memberOf || "Group the user should be a member of (optional)"}
+                      disabled={isSubmitting}
                     />
                   </Grid>
                 </Grid>
@@ -276,64 +263,12 @@ spec:
                   color="primary"
                   className={classes.submitButton}
                   fullWidth
+                  disabled={isSubmitting}
+                  startIcon={isSubmitting ? <CircularProgress size={20} /> : undefined}
                 >
-                  Generate User YAML
+                  {isSubmitting ? 'Creating User...' : 'Create User'}
                 </Button>
               </form>
-
-              {generatedYaml && (
-                <Box mt={3}>
-                  <Typography variant="h6" gutterBottom>
-                    Generated User YAML
-                  </Typography>
-                  <Box className={classes.yamlOutput}>
-                    <IconButton
-                      className={classes.copyButton}
-                      onClick={handleCopyToClipboard}
-                      size="small"
-                      title="Copy to clipboard"
-                    >
-                      <FileCopyIcon />
-                    </IconButton>
-                    {generatedYaml}
-                  </Box>
-                </Box>
-              )}
-
-              {generatedYaml && (
-                <Card className={classes.instructionsCard}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Instructions to Add User to Catalog
-                    </Typography>
-                    <Typography variant="body2" component="div">
-                      <ol>
-                        <li>
-                          <strong>Copy the YAML above</strong> using the copy button
-                        </li>
-                        <li>
-                          <strong>Open the file:</strong> <code>examples/org.yaml</code>
-                        </li>
-                        <li>
-                          <strong>Add the YAML content</strong> at the end of the file
-                        </li>
-                        <li>
-                          <strong>Save and commit</strong> the changes
-                        </li>
-                        <li>
-                          <strong>Deploy your changes</strong> to the server
-                        </li>
-                        <li>
-                          <strong>Refresh the catalog</strong> - the user should appear in a few minutes
-                        </li>
-                      </ol>
-                      <Typography variant="body2" style={{ marginTop: '1rem', fontStyle: 'italic' }}>
-                        Note: The user will be available at: <code>https://qortexone.qburst.build/catalog/default/user/{formData.name}</code>
-                      </Typography>
-                    </Typography>
-                  </CardContent>
-                </Card>
-              )}
             </Paper>
           </Grid>
         </Grid>
