@@ -1,4 +1,4 @@
-import { createBackendModule } from '@backstage/backend-plugin-api';
+import { createBackendPlugin } from '@backstage/backend-plugin-api';
 import { Router } from 'express';
 import { z } from 'zod';
 
@@ -15,10 +15,10 @@ type User = z.infer<typeof UserSchema>;
 // In-memory storage (in production, you'd use a database)
 const users: User[] = [];
 
-export const usersPlugin = createBackendModule({
+export const usersPlugin = createBackendPlugin({
   pluginId: 'users',
-  register(reg) {
-    reg.registerInit({
+  register(env) {
+    env.registerInit({
       deps: {
         logger: 'core.logger',
         httpRouter: 'core.httpRouter',
@@ -167,7 +167,7 @@ export const usersPlugin = createBackendModule({
             logger.error('Error updating user', { error });
             res.status(500).json({
               error: 'Internal server error',
-              message: 'Failed to update user'
+              message: 'Failed to create user'
             });
           }
         });
