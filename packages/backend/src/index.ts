@@ -7,7 +7,7 @@
  */
 
 import { createBackend } from '@backstage/backend-defaults';
-import { usersPlugin } from './plugins/users';
+import usersPlugin from './plugins/users';
 
 const backend = createBackend();
 
