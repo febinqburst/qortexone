@@ -135,22 +135,10 @@ const CreateUserPage = () => {
         body: JSON.stringify(formData),
       });
 
-      // Handle 404 specifically
-      if (response.status === 404) {
-        throw new Error('Users API endpoint not found. Please install backend dependencies and redeploy: yarn workspace backend add @backstage/backend-plugin-api express @types/express');
-      }
-
-      // Try to parse JSON response
-      let result;
-      try {
-        result = await response.json();
-      } catch (jsonError) {
-        // If JSON parsing fails, create a generic error message
-        throw new Error(`Server error (${response.status}): ${response.statusText}`);
-      }
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || `Failed to create user (${response.status})`);
+        throw new Error(result.message || 'Failed to create user');
       }
 
       // Success
