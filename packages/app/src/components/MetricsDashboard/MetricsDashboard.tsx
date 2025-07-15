@@ -11,21 +11,17 @@ import {
   Box,
   Chip,
   LinearProgress,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@material-ui/core';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from 'recharts';
 import { Content, Header, Page } from '@backstage/core-components';
 import { useApi } from '@backstage/core-plugin-api';
 import { catalogApiRef } from '@backstage/plugin-catalog-react';
@@ -35,6 +31,9 @@ import {
   Apps as AppsIcon,
   Group as GroupIcon,
   Timeline as TimelineIcon,
+  CheckCircle as CheckCircleIcon,
+  Warning as WarningIcon,
+  Error as ErrorIcon,
 } from '@material-ui/icons';
 
 interface MetricCardProps {
@@ -47,10 +46,10 @@ interface MetricCardProps {
 
 interface ComponentMetrics {
   totalComponents: number;
-  componentsByType: { name: string; count: number; color: string }[];
+  componentsByType: { name: string; count: number; percentage: number }[];
   componentsByOwner: { name: string; count: number }[];
-  componentsByLifecycle: { name: string; count: number; color: string }[];
-  recentComponents: { name: string; date: string; type: string }[];
+  componentsByLifecycle: { name: string; count: number; percentage: number }[];
+  recentComponents: { name: string; type: string; owner: string }[];
   healthStatus: { healthy: number; warning: number; critical: number };
 }
 
@@ -84,23 +83,20 @@ const useStyles = makeStyles((theme: Theme) =>
       marginBottom: theme.spacing(1),
       opacity: 0.7,
     },
-    chartContainer: {
+    section: {
       padding: theme.spacing(2),
-      height: '300px',
     },
-    chartTitle: {
+    sectionTitle: {
       marginBottom: theme.spacing(2),
       fontWeight: 'bold',
     },
-    recentItem: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: theme.spacing(1),
-      borderBottom: `1px solid ${theme.palette.divider}`,
-      '&:last-child': {
-        borderBottom: 'none',
-      },
+    progressBar: {
+      height: '10px',
+      borderRadius: '5px',
+      marginBottom: theme.spacing(1),
+    },
+    progressItem: {
+      marginBottom: theme.spacing(2),
     },
     loadingContainer: {
       display: 'flex',
@@ -108,25 +104,15 @@ const useStyles = makeStyles((theme: Theme) =>
       alignItems: 'center',
       height: '200px',
     },
+    healthGrid: {
+      textAlign: 'center',
+    },
+    healthIcon: {
+      fontSize: '3rem',
+      marginBottom: theme.spacing(1),
+    },
   }),
 );
-
-const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#8dd1e1', '#d084d0'];
-const TYPE_COLORS: { [key: string]: string } = {
-  'service': '#4caf50',
-  'website': '#2196f3',
-  'library': '#ff9800',
-  'api': '#9c27b0',
-  'component': '#607d8b',
-  'system': '#795548',
-};
-
-const LIFECYCLE_COLORS: { [key: string]: string } = {
-  'production': '#4caf50',
-  'experimental': '#ff9800',
-  'deprecated': '#f44336',
-  'development': '#2196f3',
-};
 
 const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, color, subtitle }) => {
   const classes = useStyles();
@@ -147,6 +133,41 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, color, subt
           {subtitle}
         </Typography>
       )}
+    </Paper>
+  );
+};
+
+const ProgressChart: React.FC<{ 
+  data: { name: string; count: number; percentage: number }[];
+  title: string;
+}> = ({ data, title }) => {
+  const classes = useStyles();
+  
+  return (
+    <Paper className={classes.section}>
+      <Typography variant="h6" className={classes.sectionTitle}>
+        {title}
+      </Typography>
+      {data.map((item, index) => (
+        <Box key={index} className={classes.progressItem}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+            <Typography variant="body2">
+              {item.name}
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              {item.count} ({item.percentage.toFixed(1)}%)
+            </Typography>
+          </Box>
+          <LinearProgress
+            variant="determinate"
+            value={item.percentage}
+            className={classes.progressBar}
+            style={{
+              backgroundColor: '#e0e0e0',
+            }}
+          />
+        </Box>
+      ))}
     </Paper>
   );
 };
@@ -185,7 +206,7 @@ const MetricsDashboard = () => {
         const componentsByType = Object.entries(typeCount).map(([name, count]) => ({
           name,
           count,
-          color: TYPE_COLORS[name.toLowerCase()] || '#607d8b',
+          percentage: (count / totalComponents) * 100,
         }));
 
         // Components by owner
@@ -210,16 +231,16 @@ const MetricsDashboard = () => {
         const componentsByLifecycle = Object.entries(lifecycleCount).map(([name, count]) => ({
           name,
           count,
-          color: LIFECYCLE_COLORS[name.toLowerCase()] || '#607d8b',
+          percentage: (count / totalComponents) * 100,
         }));
 
-        // Recent components (mock data - in real implementation, you'd track creation dates)
+        // Recent components
         const recentComponents = components
           .slice(0, 5)
           .map(component => ({
             name: component.metadata.name,
-            date: 'Recently added',
             type: component.spec?.type as string || 'component',
+            owner: component.spec?.owner as string || 'unassigned',
           }));
 
         // Health status (mock data - in real implementation, you'd integrate with monitoring)
@@ -325,139 +346,108 @@ const MetricsDashboard = () => {
             />
           </Grid>
 
-          {/* Components by Type Chart */}
+          {/* Components by Type */}
           <Grid item xs={12} md={6}>
-            <Paper className={classes.chartContainer}>
-              <Typography variant="h6" className={classes.chartTitle}>
-                Components by Type
-              </Typography>
-              <ResponsiveContainer width="100%" height="80%">
-                <PieChart>
-                  <Pie
-                    data={metrics.componentsByType}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, count }) => `${name}: ${count}`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="count"
-                  >
-                    {metrics.componentsByType.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </Paper>
+            <ProgressChart
+              data={metrics.componentsByType}
+              title="Components by Type"
+            />
           </Grid>
 
-          {/* Components by Lifecycle Chart */}
+          {/* Components by Lifecycle */}
           <Grid item xs={12} md={6}>
-            <Paper className={classes.chartContainer}>
-              <Typography variant="h6" className={classes.chartTitle}>
-                Components by Lifecycle
-              </Typography>
-              <ResponsiveContainer width="100%" height="80%">
-                <BarChart data={metrics.componentsByLifecycle}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#8884d8">
-                    {metrics.componentsByLifecycle.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </Paper>
+            <ProgressChart
+              data={metrics.componentsByLifecycle}
+              title="Components by Lifecycle"
+            />
           </Grid>
 
-          {/* Components by Owner Chart */}
+          {/* Top Component Owners */}
           <Grid item xs={12} md={8}>
-            <Paper className={classes.chartContainer}>
-              <Typography variant="h6" className={classes.chartTitle}>
+            <Paper className={classes.section}>
+              <Typography variant="h6" className={classes.sectionTitle}>
                 Top Component Owners
               </Typography>
-              <ResponsiveContainer width="100%" height="80%">
-                <BarChart data={metrics.componentsByOwner}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#82ca9d" />
-                </BarChart>
-              </ResponsiveContainer>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Owner/Team</TableCell>
+                      <TableCell align="right">Components</TableCell>
+                      <TableCell align="right">Percentage</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {metrics.componentsByOwner.map((owner, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{owner.name}</TableCell>
+                        <TableCell align="right">{owner.count}</TableCell>
+                        <TableCell align="right">
+                          {((owner.count / metrics.totalComponents) * 100).toFixed(1)}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Paper>
           </Grid>
 
           {/* Recent Components */}
           <Grid item xs={12} md={4}>
-            <Paper className={classes.root}>
-              <Typography variant="h6" className={classes.chartTitle}>
+            <Paper className={classes.section}>
+              <Typography variant="h6" className={classes.sectionTitle}>
                 Recent Components
               </Typography>
-              {metrics.recentComponents.map((component, index) => (
-                <Box key={index} className={classes.recentItem}>
-                  <Box>
-                    <Typography variant="body2" fontWeight="bold">
-                      {component.name}
-                    </Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      {component.date}
-                    </Typography>
-                  </Box>
-                  <Chip
-                    label={component.type}
-                    size="small"
-                    style={{
-                      backgroundColor: TYPE_COLORS[component.type.toLowerCase()] || '#607d8b',
-                      color: 'white',
-                    }}
-                  />
-                </Box>
-              ))}
+              <List>
+                {metrics.recentComponents.map((component, index) => (
+                  <ListItem key={index}>
+                    <ListItemIcon>
+                      <AppsIcon />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={component.name}
+                      secondary={`${component.type} • ${component.owner}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
             </Paper>
           </Grid>
 
           {/* Health Status */}
           <Grid item xs={12}>
-            <Paper className={classes.root}>
-              <Typography variant="h6" className={classes.chartTitle}>
+            <Paper className={classes.section}>
+              <Typography variant="h6" className={classes.sectionTitle}>
                 Component Health Status
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
-                  <Box textAlign="center">
-                    <Typography variant="h4" style={{ color: '#4caf50' }}>
-                      {metrics.healthStatus.healthy}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Healthy Components
-                    </Typography>
-                  </Box>
+                <Grid item xs={12} md={4} className={classes.healthGrid}>
+                  <CheckCircleIcon className={classes.healthIcon} style={{ color: '#4caf50' }} />
+                  <Typography variant="h4" style={{ color: '#4caf50' }}>
+                    {metrics.healthStatus.healthy}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Healthy Components
+                  </Typography>
                 </Grid>
-                <Grid item xs={12} md={4}>
-                  <Box textAlign="center">
-                    <Typography variant="h4" style={{ color: '#ff9800' }}>
-                      {metrics.healthStatus.warning}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Warning Components
-                    </Typography>
-                  </Box>
+                <Grid item xs={12} md={4} className={classes.healthGrid}>
+                  <WarningIcon className={classes.healthIcon} style={{ color: '#ff9800' }} />
+                  <Typography variant="h4" style={{ color: '#ff9800' }}>
+                    {metrics.healthStatus.warning}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Warning Components
+                  </Typography>
                 </Grid>
-                <Grid item xs={12} md={4}>
-                  <Box textAlign="center">
-                    <Typography variant="h4" style={{ color: '#f44336' }}>
-                      {metrics.healthStatus.critical}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Critical Components
-                    </Typography>
-                  </Box>
+                <Grid item xs={12} md={4} className={classes.healthGrid}>
+                  <ErrorIcon className={classes.healthIcon} style={{ color: '#f44336' }} />
+                  <Typography variant="h4" style={{ color: '#f44336' }}>
+                    {metrics.healthStatus.critical}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Critical Components
+                  </Typography>
                 </Grid>
               </Grid>
             </Paper>
