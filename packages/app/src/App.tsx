@@ -38,6 +38,7 @@ import { RequirePermission } from '@backstage/plugin-permission-react';
 import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/alpha';
 import { googleAuthApiRef } from '@backstage/core-plugin-api';
 import { githubAuthApiRef } from '@backstage/core-plugin-api';
+import { UserGroupManagerPage } from '@internal/plugin-user-group-manager';
 
 const app = createApp({
   apis,
@@ -108,6 +109,7 @@ const routes = (
     </Route>
     <Route path="/settings" element={<UserSettingsPage />} />
     <Route path="/catalog-graph" element={<CatalogGraphPage />} />
+    <Route path="/user-group-manager" element={<UserGroupManagerPage />} />
   </FlatRoutes>
 );
 
