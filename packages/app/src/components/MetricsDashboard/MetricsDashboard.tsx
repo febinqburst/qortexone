@@ -61,7 +61,7 @@ const useStyles = makeStyles((theme: Theme) =>
     metricCard: {
       padding: theme.spacing(2),
       textAlign: 'center',
-      height: '140px',
+      height: '180px',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
