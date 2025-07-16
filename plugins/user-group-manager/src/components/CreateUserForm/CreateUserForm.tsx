@@ -62,7 +62,7 @@ export const CreateUserForm = () => {
 
   const saveToCatalog = async (yamlString: string) => {
     try {
-      const response = await fetch('http://localhost:7007/api/user-entity', {
+      const response = await fetch('https://qortexone.qburst.build/api/user-entity', {
         method: 'POST',
         headers: { 'Content-Type': 'application/yaml' },
         body: yamlString,

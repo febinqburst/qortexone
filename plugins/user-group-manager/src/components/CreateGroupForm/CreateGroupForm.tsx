@@ -45,7 +45,7 @@ export const CreateGroupForm = () => {
 
   const saveToCatalog = async (yamlString: string) => {
     try {
-      const response = await fetch('http://localhost:7007/api/group-entity', {
+      const response = await fetch('https://qortexone.qburst.build/api/group-entity', {
         method: 'POST',
         headers: { 'Content-Type': 'application/yaml' },
         body: yamlString,
