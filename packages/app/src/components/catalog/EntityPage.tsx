@@ -61,7 +61,7 @@ import {
   EntityGrafanaDashboardsCard,
   EntityGrafanaAlertsCard,
   isGrafanaAvailable,
-} from '@backstage/plugin-grafana';
+} from '@backstage-community/plugin-grafana';
 import React from 'react';
 
 const techdocsContent = (

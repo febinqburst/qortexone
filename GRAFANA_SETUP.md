@@ -43,7 +43,7 @@ grafana:
 
 ```bash
 cd /var/www/html/qortexone
-yarn workspace app add @backstage/plugin-grafana
+yarn workspace app add @backstage-community/plugin-grafana
 yarn build:all
 ```
 
