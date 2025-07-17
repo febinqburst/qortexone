@@ -12,6 +12,12 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: example-website
+  annotations:
+    # Grafana dashboard annotations
+    grafana/dashboard-selector: "tags @> ['backstage', 'example-website']"
+    grafana/alert-label-selector: "service=example-website"
+    # You can also reference specific dashboard UID
+    # grafana/dashboard-uid: "abc123def"
 spec:
   type: website
   lifecycle: experimental

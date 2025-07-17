@@ -57,6 +57,12 @@ import {
   EntityKubernetesContent,
   isKubernetesAvailable,
 } from '@backstage/plugin-kubernetes';
+import {
+  EntityGrafanaDashboardsCard,
+  EntityGrafanaAlertsCard,
+  isGrafanaAvailable,
+} from '@backstage/plugin-grafana';
+import React from 'react';
 
 const techdocsContent = (
   <EntityTechdocsContent>
@@ -161,6 +167,21 @@ const serviceEntityPage = (
       <EntityKubernetesContent />
     </EntityLayout.Route>
 
+    <EntityLayout.Route
+      path="/monitoring"
+      title="Monitoring"
+      if={isGrafanaAvailable}
+    >
+      <Grid container spacing={3} alignItems="stretch">
+        <Grid item xs={12}>
+          <EntityGrafanaDashboardsCard />
+        </Grid>
+        <Grid item xs={12}>
+          <EntityGrafanaAlertsCard />
+        </Grid>
+      </Grid>
+    </EntityLayout.Route>
+
     <EntityLayout.Route path="/api" title="API">
       <Grid container spacing={3} alignItems="stretch">
         <Grid item md={6}>
@@ -205,6 +226,21 @@ const websiteEntityPage = (
       if={isKubernetesAvailable}
     >
       <EntityKubernetesContent />
+    </EntityLayout.Route>
+
+    <EntityLayout.Route
+      path="/monitoring"
+      title="Monitoring"
+      if={isGrafanaAvailable}
+    >
+      <Grid container spacing={3} alignItems="stretch">
+        <Grid item xs={12}>
+          <EntityGrafanaDashboardsCard />
+        </Grid>
+        <Grid item xs={12}>
+          <EntityGrafanaAlertsCard />
+        </Grid>
+      </Grid>
     </EntityLayout.Route>
 
     <EntityLayout.Route path="/dependencies" title="Dependencies">
