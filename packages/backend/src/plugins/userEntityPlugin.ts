@@ -6,6 +6,7 @@ import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
 import cors from 'cors';
+import { CatalogClient } from '@backstage/catalog-client';
 
 export const userEntityRouter = createBackendPlugin({
   pluginId: 'user-entity',
@@ -13,12 +14,16 @@ export const userEntityRouter = createBackendPlugin({
     env.registerInit({
       deps: {
         http: coreServices.httpRouter,
+        discovery: coreServices.discovery,
+        config: coreServices.rootConfig,
       },
-      async init({ http }) {
+      async init({ http, discovery, config }) {
         const router = Router();
-        router.use(cors({ origin: 'http://localhost:3000' }));
+        const appBaseUrl = config.getString('app.baseUrl');
+        const backendBaseUrl = config.getString('backend.baseUrl');
+        router.use(cors({ origin: appBaseUrl }));
 
-        router.post('/', (req, res) => {
+        router.post('/add', (req, res) => {
           let body = '';
           req.setEncoding('utf8');
           req.on('data', chunk => (body += chunk));
@@ -39,6 +44,44 @@ export const userEntityRouter = createBackendPlugin({
             }
           });
         });
+
+        router.get('/org.yaml', (_req, res) => {
+          const filePath = path.resolve(
+            __dirname,
+            '../../../../examples/org.yaml',
+          );
+          const yamlContent = fs.readFileSync(filePath, 'utf8');
+          res.type('text/yaml').send(yamlContent);
+        });
+
+        router.get('/register', async (req, res) => {
+          const catalogClient = new CatalogClient({
+            discoveryApi: discovery,
+          });
+          const existingLocations = await catalogClient.getLocations();
+          const alreadyExists = existingLocations?.items?.some(
+            loc => loc.target === `${backendBaseUrl}/api/user-entity/org.yaml`,
+          );
+          const username = req.query.name || '';
+
+          try {
+            if (!alreadyExists) {
+              await catalogClient.addLocation({
+                type: 'url',
+                target: `${backendBaseUrl}/api/user-entity/org.yaml`,
+              });
+              if (username) {
+                await catalogClient.refreshEntity(`user:default/${username}`);
+              }
+            }
+          } catch (err) {
+            console.error(err);
+            res.status(500).send('failed to fetch org.yaml');
+          }
+
+          res.status(200).send('org.yaml registered');
+        });
+
         http.use(router);
         http.addAuthPolicy({ path: '/', allow: 'unauthenticated' });
       },

@@ -1,1 +1,6 @@
-export { userGroupManagerPlugin, UserGroupManagerPage } from './plugin';
+export {
+  userGroupManagerPlugin,
+  UserGroupManagerPage,
+  AddGroupPage,
+  AddUserPage,
+} from './plugin';

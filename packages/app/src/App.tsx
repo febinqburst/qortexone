@@ -38,7 +38,13 @@ import { RequirePermission } from '@backstage/plugin-permission-react';
 import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/alpha';
 import { googleAuthApiRef } from '@backstage/core-plugin-api';
 import { githubAuthApiRef } from '@backstage/core-plugin-api';
-import { UserGroupManagerPage } from '@internal/plugin-user-group-manager';
+import {
+  UserGroupManagerPage,
+  AddUserPage,
+  AddGroupPage,
+} from '@internal/plugin-user-group-manager';
+import { UnifiedThemeProvider } from '@backstage/theme';
+import { qbDark, qbLight } from './theme/qbTheme';
 
 const app = createApp({
   apis,
@@ -60,18 +66,45 @@ const app = createApp({
     });
   },
   components: {
-    SignInPage: props => <SignInPage {...props} auto providers={[{
-      id: 'google-auth-provider',
-      title: 'Google',
-      message: 'Sign In using Google',
-      apiRef: googleAuthApiRef,
-    },{
-      id: 'github-auth-provider',
-      title: 'GitHub',
-      message: 'Sign in using GitHub',
-      apiRef: githubAuthApiRef,
-    },]}  />,
+    SignInPage: props => (
+      <SignInPage
+        {...props}
+        auto
+        providers={[
+          {
+            id: 'google-auth-provider',
+            title: 'Google',
+            message: 'Sign In using Google',
+            apiRef: googleAuthApiRef,
+          },
+          {
+            id: 'github-auth-provider',
+            title: 'GitHub',
+            message: 'Sign in using GitHub',
+            apiRef: githubAuthApiRef,
+          },
+        ]}
+      />
+    ),
   },
+  themes: [
+    {
+      id: 'qb-light',
+      title: 'QB Light',
+      variant: 'light',
+      Provider: ({ children }) => (
+        <UnifiedThemeProvider theme={qbLight}>{children}</UnifiedThemeProvider>
+      ),
+    },
+    {
+      id: 'qb-dark',
+      title: 'QB Dark',
+      variant: 'dark',
+      Provider: ({ children }) => (
+        <UnifiedThemeProvider theme={qbDark}>{children}</UnifiedThemeProvider>
+      ),
+    },
+  ],
 });
 
 const routes = (
@@ -110,6 +143,8 @@ const routes = (
     <Route path="/settings" element={<UserSettingsPage />} />
     <Route path="/catalog-graph" element={<CatalogGraphPage />} />
     <Route path="/user-group-manager" element={<UserGroupManagerPage />} />
+    <Route path="/user-group-manager/add-user" element={<AddUserPage />} />
+    <Route path="/user-group-manager/add-group" element={<AddGroupPage />} />
   </FlatRoutes>
 );
 

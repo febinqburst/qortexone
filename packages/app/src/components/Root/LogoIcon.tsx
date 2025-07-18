@@ -7,7 +7,7 @@ const useStyles = makeStyles({
     height: 28,
   },
   text: {
-    fill: '#7df3e1',
+    fill: '#f6f6f6',
     fontSize: '18px',
     fontWeight: 'bold',
     fontFamily: 'Arial, sans-serif',

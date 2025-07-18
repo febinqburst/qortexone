@@ -65,7 +65,9 @@ export const Root = ({ children }: PropsWithChildren<{}>) => (
       <SidebarGroup label="Search" icon={<SearchIcon />} to="/search">
         <SidebarSearchModal />
       </SidebarGroup>
-      <SidebarDivider />
+      <SidebarDivider
+        style={{ backgroundColor: '#ccc', border: '1px solid #ccc' }}
+      />
       <SidebarGroup label="Menu" icon={<MenuIcon />}>
         {/* Global nav, not org-specific */}
         <SidebarItem icon={HomeIcon} to="catalog" text="Home" />
@@ -78,15 +80,23 @@ export const Root = ({ children }: PropsWithChildren<{}>) => (
         <SidebarItem icon={ExtensionIcon} to="api-docs" text="APIs" />
         <SidebarItem icon={LibraryBooks} to="docs" text="Docs" />
         <SidebarItem icon={CreateComponentIcon} to="create" text="Create..." />
-        <SidebarItem icon={PersonAdd} to="user-group-manager" text="Manage Users and Groups" />
+        <SidebarItem
+          icon={PersonAdd}
+          to="user-group-manager"
+          text="Manage Users and Groups"
+        />
         {/* End global nav */}
-        <SidebarDivider />
+        <SidebarDivider
+          style={{ backgroundColor: '#ccc', border: '1px solid #ccc' }}
+        />
         <SidebarScrollWrapper>
           {/* Items in this group will be scrollable if they run out of space */}
         </SidebarScrollWrapper>
       </SidebarGroup>
       <SidebarSpace />
-      <SidebarDivider />
+      <SidebarDivider
+        style={{ backgroundColor: '#ccc', border: '1px solid #ccc' }}
+      />
       <SidebarGroup
         label="Settings"
         icon={<UserSettingsSignInAvatar />}
