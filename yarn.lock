@@ -2751,6 +2751,65 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@backstage-community/plugin-jenkins-backend@npm:^0.16.0":
+  version: 0.16.0
+  resolution: "@backstage-community/plugin-jenkins-backend@npm:0.16.0"
+  dependencies:
+    "@backstage-community/plugin-jenkins-common": "npm:^0.8.0"
+    "@backstage/backend-defaults": "npm:^0.11.0"
+    "@backstage/backend-plugin-api": "npm:^1.4.0"
+    "@backstage/catalog-client": "npm:^1.10.1"
+    "@backstage/catalog-model": "npm:^1.7.4"
+    "@backstage/config": "npm:^1.3.2"
+    "@backstage/errors": "npm:^1.2.7"
+    "@backstage/plugin-catalog-node": "npm:^1.17.1"
+    "@backstage/plugin-permission-common": "npm:^0.9.0"
+    "@backstage/plugin-permission-node": "npm:^0.10.1"
+    "@types/express": "npm:^4.17.6"
+    express: "npm:^4.17.1"
+    express-promise-router: "npm:^4.1.0"
+    jenkins: "npm:^1.0.0"
+    node-fetch: "npm:^2.6.7"
+    yn: "npm:^4.0.0"
+  checksum: 10c0/23db1535c006098f225a618c830eaf9cfecbac7228d943cb66ba2cad4d868d96eee6f256f7b96fab699f7dc6b3d33669a8627b738c5f7bbc6fbd96cfdb55c800
+  languageName: node
+  linkType: hard
+
+"@backstage-community/plugin-jenkins-common@npm:^0.8.0":
+  version: 0.8.0
+  resolution: "@backstage-community/plugin-jenkins-common@npm:0.8.0"
+  dependencies:
+    "@backstage/plugin-catalog-common": "npm:^1.1.4"
+    "@backstage/plugin-permission-common": "npm:^0.9.0"
+  checksum: 10c0/23d64d83949d97c7669a9d97323cb883d557ceb3baceb8bb48acecc7084264e033784ecbe24dcf0a713baedbbf9cb2d7cb5e3456060e456deec1c4bb67e6df0e
+  languageName: node
+  linkType: hard
+
+"@backstage-community/plugin-jenkins@npm:^0.21.0":
+  version: 0.21.0
+  resolution: "@backstage-community/plugin-jenkins@npm:0.21.0"
+  dependencies:
+    "@backstage-community/plugin-jenkins-common": "npm:^0.8.0"
+    "@backstage/catalog-model": "npm:^1.7.4"
+    "@backstage/core-compat-api": "npm:^0.4.3"
+    "@backstage/core-components": "npm:^0.17.3"
+    "@backstage/core-plugin-api": "npm:^1.10.8"
+    "@backstage/errors": "npm:^1.2.7"
+    "@backstage/frontend-plugin-api": "npm:^0.10.3"
+    "@backstage/plugin-catalog-react": "npm:^1.19.0"
+    "@material-ui/core": "npm:^4.12.2"
+    "@material-ui/icons": "npm:^4.9.1"
+    "@types/react": "npm:^16.13.1 || ^17.0.0 || ^18.0.0"
+    luxon: "npm:^3.0.0"
+    react-use: "npm:^17.2.4"
+  peerDependencies:
+    react: ^16.13.1 || ^17.0.0 || ^18.0.0
+    react-dom: ^16.13.1 || ^17.0.0 || ^18.0.0
+    react-router-dom: 6.0.0-beta.0 || ^6.3.0
+  checksum: 10c0/bc155755c3b4054f1df9989987bbf2bb344cc68797499ee20c7ab262cb1355d8bd6e6ac12c5f2c31c6023cbcaeb5fc1660f9aebca05e1313913ad80ef2bf5d67
+  languageName: node
+  linkType: hard
+
 "@backstage/app-defaults@npm:^1.6.1, @backstage/app-defaults@npm:^1.6.4":
   version: 1.6.4
   resolution: "@backstage/app-defaults@npm:1.6.4"
@@ -3297,7 +3356,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@backstage/core-compat-api@npm:^0.4.1, @backstage/core-compat-api@npm:^0.4.4":
+"@backstage/core-compat-api@npm:^0.4.1, @backstage/core-compat-api@npm:^0.4.3, @backstage/core-compat-api@npm:^0.4.4":
   version: 0.4.4
   resolution: "@backstage/core-compat-api@npm:0.4.4"
   dependencies:
@@ -13890,6 +13949,7 @@ __metadata:
   resolution: "app@workspace:packages/app"
   dependencies:
     "@backstage-community/plugin-grafana": "npm:^0.6.0"
+    "@backstage-community/plugin-jenkins": "npm:^0.21.0"
     "@backstage/app-defaults": "npm:^1.6.1"
     "@backstage/catalog-model": "npm:^1.6.0"
     "@backstage/cli": "npm:^0.33.0"
@@ -14560,6 +14620,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "backend@workspace:packages/backend"
   dependencies:
+    "@backstage-community/plugin-jenkins-backend": "npm:^0.16.0"
     "@backstage/backend-defaults": "npm:^0.11.0"
     "@backstage/cli": "npm:^0.33.0"
     "@backstage/config": "npm:^1.3.2"
@@ -21791,6 +21852,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jenkins@npm:^1.0.0":
+  version: 1.1.0
+  resolution: "jenkins@npm:1.1.0"
+  dependencies:
+    papi: "npm:^1.1.0"
+  checksum: 10c0/bc3b77ff25951d19ad909d21cf6cf52d3f6f83522ec14b8908571395b5630fd667fb519a7cd8fdb75bc94b4184921a8bed0381ed1ae0ed1d204a0411a6152310
+  languageName: node
+  linkType: hard
+
 "jest-changed-files@npm:^29.7.0":
   version: 29.7.0
   resolution: "jest-changed-files@npm:29.7.0"
@@ -25924,6 +25994,13 @@ __metadata:
   version: 1.0.11
   resolution: "pako@npm:1.0.11"
   checksum: 10c0/86dd99d8b34c3930345b8bbeb5e1cd8a05f608eeb40967b293f72fe469d0e9c88b783a8777e4cc7dc7c91ce54c5e93d88ff4b4f060e6ff18408fd21030d9ffbe
+  languageName: node
+  linkType: hard
+
+"papi@npm:^1.1.0":
+  version: 1.1.2
+  resolution: "papi@npm:1.1.2"
+  checksum: 10c0/6a468e464c8a38121d06368b45dc65e6789e1d11b4c6afdcc8af462538e49c9ac6f01bbb44eeda0effdd13b470ff69dd99aac599ce36b8b7309d71f66d9832b3
   languageName: node
   linkType: hard
 
