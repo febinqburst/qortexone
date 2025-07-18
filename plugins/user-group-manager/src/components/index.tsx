@@ -20,7 +20,7 @@ export const UserGroupManager = () => {
         return <CreateGroupForm />;
       default:
         return (
-          <Content>
+          <Content noPadding>
             <Header title="Manage Users and Groups" />
             <Box padding={3}>
               <Box display="flex" flexDirection="row" gridGap={24}>
@@ -61,5 +61,5 @@ export const UserGroupManager = () => {
     }
   };
 
-  return <Box>{activeView(activeForm)}</Box>;
+  return activeView(activeForm);
 };
