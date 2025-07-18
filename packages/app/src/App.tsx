@@ -87,24 +87,6 @@ const app = createApp({
       />
     ),
   },
-  themes: [
-    {
-      id: 'qb-light',
-      title: 'QB Light',
-      variant: 'light',
-      Provider: ({ children }) => (
-        <UnifiedThemeProvider theme={qbLight}>{children}</UnifiedThemeProvider>
-      ),
-    },
-    {
-      id: 'qb-dark',
-      title: 'QB Dark',
-      variant: 'dark',
-      Provider: ({ children }) => (
-        <UnifiedThemeProvider theme={qbDark}>{children}</UnifiedThemeProvider>
-      ),
-    },
-  ],
 });
 
 const routes = (
