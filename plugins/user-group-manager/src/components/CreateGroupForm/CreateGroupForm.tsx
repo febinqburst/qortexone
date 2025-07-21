@@ -4,7 +4,12 @@ import {
   Header,
   InfoCard,
 } from '@backstage/core-components';
-import { alertApiRef, configApiRef, useApi } from '@backstage/core-plugin-api';
+import {
+  alertApiRef,
+  configApiRef,
+  identityApiRef,
+  useApi,
+} from '@backstage/core-plugin-api';
 import { Box, Button } from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
 import yaml from 'js-yaml';
@@ -15,7 +20,6 @@ const initialForm = {
   displayName: '',
   type: '',
   children: [],
-  parent: '',
 };
 
 export const CreateGroupForm = () => {
@@ -25,22 +29,35 @@ export const CreateGroupForm = () => {
   const alertApi = useApi(alertApiRef);
   const config = useApi(configApiRef);
   const backendBaseUrl = config.getString('backend.baseUrl');
+  const credentials = useApi(identityApiRef).getCredentials();
 
   const handleChange = (field: string, value: string | string[]) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = () => {
+    const { name, displayName, type, children } = form;
+
+    if (!name) {
+      console.error('Missing form fields');
+      alertApi.post({
+        message: 'Missing form fields',
+        severity: 'error',
+        display: 'transient',
+      });
+      return;
+    }
+
     const groupYaml = {
       apiVersion: 'backstage.io/v1alpha1',
       kind: 'Group',
-      metadata: { name: form.name },
+      metadata: { name: name },
       spec: {
-        type: form.type,
+        type: type,
         profile: {
-          displayName: form.displayName,
+          displayName: displayName,
         },
-        children: form.children || [],
+        children: children || [],
       },
     };
 
@@ -56,7 +73,10 @@ export const CreateGroupForm = () => {
         `${backendBaseUrl}/api/group-entity/add`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/yaml' },
+          headers: {
+            'Content-Type': 'text/yaml',
+            Authorization: `Bearer ${(await credentials).token}`,
+          },
           body: yamlString,
         },
       );
@@ -71,32 +91,53 @@ export const CreateGroupForm = () => {
         return;
       }
 
-      const registerResponse = await fetch(
-        `${backendBaseUrl}/api/group-entity/register?name=${form.name}`,
+      const catalogLocations = await fetch(
+        `${backendBaseUrl}/api/catalog/entities?filter=kind=location,spec.type=file`,
         {
           method: 'GET',
+          headers: {
+            Authorization: `Bearer ${(await credentials).token}`,
+          },
+        },
+      );
+      const locationsJSON = await catalogLocations.json();
+      let entityRef = '';
+      locationsJSON.forEach((r: any) => {
+        if (r.spec.target.includes('org.yaml')) {
+          entityRef = `location:${r.metadata.namespace}/${r.metadata.name}`;
+        }
+      });
+
+      const refreshResponse = await fetch(
+        `${backendBaseUrl}/api/catalog/refresh`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${(await credentials).token}`,
+          },
+          body: JSON.stringify({ entityRef: entityRef }),
         },
       );
 
-      if (registerResponse.ok) {
+      if (!refreshResponse.ok) {
+        console.error('Failed to refresh:', await refreshResponse.text());
         alertApi.post({
-          message: 'Group entity registered in catalog successfully!',
-          severity: 'success',
+          message: 'Saved group but failed to refresh',
+          severity: 'warning',
           display: 'transient',
         });
       } else {
-        console.error('Failed to register:', await registerResponse.text());
-
         alertApi.post({
-          message: 'YAML saved, but catalog registration failed.',
-          severity: 'error',
+          message: 'Saved group successfully!',
+          severity: 'success',
           display: 'transient',
         });
       }
     } catch (err) {
-      console.error('Error saving YAML:', err);
+      console.error('Error saving group:', err);
       alertApi.post({
-        message: 'Error saving YAML!',
+        message: 'Error saving the group details',
         severity: 'error',
         display: 'transient',
       });
@@ -111,9 +152,17 @@ export const CreateGroupForm = () => {
           <TextField
             label="Name"
             value={form.name}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleChange('name', e.target.value)
-            }
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              const value = e.target.value.trim();
+              if (
+                value === '' ||
+                /^[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*$/.test(value)
+              ) {
+                handleChange('name', value);
+              }
+            }}
+            placeholder="Letters and Numbers separated by [-_]"
+            required
           />
           <TextField
             label="Display Name"
@@ -121,13 +170,21 @@ export const CreateGroupForm = () => {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleChange('displayName', e.target.value)
             }
+            placeholder="Enter a Display Name"
           />
           <TextField
             label="Group Type"
             value={form.type}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleChange('type', e.target.value)
-            }
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              const value = e.target.value.trim();
+              if (
+                value === '' ||
+                (/^[a-z][a-z0-9-]*$/g.test(value) && value.length < 30)
+              ) {
+                handleChange('type', value);
+              }
+            }}
+            placeholder="Lowercase, multiple words separated my hiphen [-]"
           />
           <Box marginTop={1}>
             <Button variant="contained" color="primary" onClick={handleSubmit}>
