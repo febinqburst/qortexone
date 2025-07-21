@@ -53,35 +53,3 @@ spec:
     displayName: Sudheer Nambiar
     email: sudheer.kandath@qburst.com
   memberOf: [default/devops]
-
-
----
-apiVersion: backstage.io/v1alpha1
-kind: User
-metadata:
-  name: mohammed-musharraf
-  annotations:
-    backstage.io/github-user: qburst-musharraf
-spec:
-  profile:
-    displayName: mohammed musharraf
-    email: ' musharraf@qburst.com'
-    picture: ''
-  memberOf:
-    - engineering
-    - design
-
----
-apiVersion: backstage.io/v1alpha1
-kind: User
-metadata:
-  name: musharraf
-  annotations:
-    backstage.io/github-user: qburst-musharraf
-spec:
-  profile:
-    displayName: musharraf
-    email: ' musharraf@qburst.com'
-    picture: ''
-  memberOf:
-    - engineering
