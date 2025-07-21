@@ -7,8 +7,8 @@ import fs from 'fs';
 import path from 'path';
 import cors from 'cors';
 
-export const groupEntityRouter = createBackendPlugin({
-  pluginId: 'group-entity',
+export const userGroupEntityRouter = createBackendPlugin({
+  pluginId: 'user-group-entity',
   register(env) {
     env.registerInit({
       deps: {

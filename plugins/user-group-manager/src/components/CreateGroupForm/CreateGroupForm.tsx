@@ -39,9 +39,27 @@ export const CreateGroupForm = () => {
     const { name, displayName, type, children } = form;
 
     if (!name) {
-      console.error('Missing form fields');
+      console.error('Missing required form fields');
       alertApi.post({
         message: 'Missing form fields',
+        severity: 'error',
+        display: 'transient',
+      });
+      return;
+    }
+
+    const regExpMap = {
+      name: new RegExp(/^[a-zA-Z](?:[a-zA-Z0-9_-]*[a-zA-Z0-9])?$/),
+      type: new RegExp(/^[a-zA-Z](?:[a-zA-Z0-9_-]*[a-zA-Z0-9])?$/),
+    };
+
+    if (
+      (name && !regExpMap.name.test(name)) ||
+      (type && !regExpMap.type.test(type) && type.length > 30)
+    ) {
+      console.error('Invalid form field(s)');
+      alertApi.post({
+        message: 'Invalid form field(s)',
         severity: 'error',
         display: 'transient',
       });
@@ -70,7 +88,7 @@ export const CreateGroupForm = () => {
   const saveToCatalog = async (yamlString: string) => {
     try {
       const appendResponse = await fetch(
-        `${backendBaseUrl}/api/group-entity/add`,
+        `${backendBaseUrl}/api/user-group-entity/add`,
         {
           method: 'POST',
           headers: {
@@ -152,15 +170,9 @@ export const CreateGroupForm = () => {
           <TextField
             label="Name"
             value={form.name}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const value = e.target.value.trim();
-              if (
-                value === '' ||
-                /^[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*$/.test(value)
-              ) {
-                handleChange('name', value);
-              }
-            }}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleChange('name', e.target.value.trim())
+            }
             placeholder="Letters and Numbers separated by [-_]"
             required
           />
@@ -175,16 +187,10 @@ export const CreateGroupForm = () => {
           <TextField
             label="Group Type"
             value={form.type}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const value = e.target.value.trim();
-              if (
-                value === '' ||
-                (/^[a-z][a-z0-9-]*$/g.test(value) && value.length < 30)
-              ) {
-                handleChange('type', value);
-              }
-            }}
-            placeholder="Lowercase, multiple words separated my hiphen [-]"
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleChange('type', e.target.value.trim())
+            }
+            placeholder="Lowercase, multiple words must separated my hiphen [-_]"
           />
           <Box marginTop={1}>
             <Button variant="contained" color="primary" onClick={handleSubmit}>
