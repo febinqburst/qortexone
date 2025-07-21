@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Content,
   Header,
@@ -10,7 +10,12 @@ import {
 import TextField from '@material-ui/core/TextField';
 import { Box, Button, FormControl } from '@material-ui/core';
 import yaml from 'js-yaml';
-import { useApi, configApiRef, alertApiRef } from '@backstage/core-plugin-api';
+import {
+  useApi,
+  configApiRef,
+  alertApiRef,
+  identityApiRef,
+} from '@backstage/core-plugin-api';
 
 const initialForm = {
   name: '',
@@ -20,46 +25,121 @@ const initialForm = {
   github: '',
   groups: [],
 };
+const initialGroup = [{ label: 'Please select an option', value: '' }];
 
 export const CreateUserForm = () => {
   const [form, setForm] = useState(initialForm);
   const [yamlPreview, setYamlPreview] = useState<string | null>(null);
+  const [groups, setGroups] = useState(initialGroup);
 
   const alertApi = useApi(alertApiRef);
   const config = useApi(configApiRef);
   const backendBaseUrl = config.getString('backend.baseUrl');
+  const credentials = useApi(identityApiRef).getCredentials();
 
-  // TODO: extract groups from org.yaml
-  const groupOptions = [
-    { label: 'engineering', value: 'engineering' },
-    { label: 'design', value: 'design' },
-    { label: 'devops', value: 'devops' },
-    { label: 'marketing', value: 'marketing' },
-  ];
+  const fetchAndSetGroups = async () => {
+    const catalogGroups = await fetch(
+      `${backendBaseUrl}/api/catalog/entities?filter=kind=group`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${(await credentials).token}`,
+        },
+      },
+    );
+
+    if (!catalogGroups.ok) {
+      console.error(
+        'Error fetching catalog groups: ',
+        await catalogGroups.text(),
+      );
+      setGroups(initialGroup);
+      return;
+    }
+
+    const groupsJSON = await catalogGroups.json();
+
+    const groups = groupsJSON?.map((r: any) => {
+      return {
+        label: r?.spec?.profile?.displayName ?? r.metadata.name,
+        value: r.metadata.name,
+      };
+    });
+
+    setGroups(groups);
+  };
+
+  useEffect(() => {
+    fetchAndSetGroups();
+  }, []);
 
   const handleChange = (field: string, value: string | string[]) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = () => {
-    const userYaml = {
+    const { name, displayName, github, email, picture, groups } = form;
+
+    if (!name || !github || !email) {
+      console.error('Missing form fields');
+      alertApi.post({
+        message: 'Missing form fields',
+        severity: 'error',
+        display: 'transient',
+      });
+      return;
+    }
+
+    if (
+      (name && /^[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*$/.test(name)) ||
+      (picture &&
+        !/https?:\/\/(?:www\.)?[^\s]+(?:\.(?:jpg|jpeg|png|gif|bmp))?/.test(
+          picture,
+        )) ||
+      (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email))
+    ) {
+      console.error('Invalid form field(s)');
+      alertApi.post({
+        message: 'Invalid form field(s)',
+        severity: 'error',
+        display: 'transient',
+      });
+      return;
+    }
+
+    let userYaml = {
       apiVersion: 'backstage.io/v1alpha1',
       kind: 'User',
       metadata: {
-        name: form.name,
+        name: name,
         annotations: {
-          'backstage.io/github-user': form.github,
+          'backstage.io/github-user': github,
         },
       },
       spec: {
         profile: {
-          displayName: form.displayName,
-          email: form.email,
-          picture: form.picture,
+          displayName: displayName,
+          email: email,
         },
-        memberOf: form.groups,
+        memberOf: groups,
       },
     };
+
+    if (picture) {
+      userYaml = Object.assign(
+        {},
+        {
+          ...userYaml,
+          spec: {
+            ...userYaml.spec,
+            profile: {
+              ...userYaml.spec.profile,
+              picture,
+            },
+          },
+        },
+      );
+    }
 
     const yamlString = yaml.dump(userYaml);
     setYamlPreview(yamlString);
@@ -73,7 +153,10 @@ export const CreateUserForm = () => {
         `${backendBaseUrl}/api/user-entity/add`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/yaml' },
+          headers: {
+            'Content-Type': 'text/yaml',
+            Authorization: `Bearer ${(await credentials).token}`,
+          },
           body: yamlString,
         },
       );
@@ -88,32 +171,53 @@ export const CreateUserForm = () => {
         return;
       }
 
-      const registerResponse = await fetch(
-        `${backendBaseUrl}/api/user-entity/register?name=${form.name}`,
+      const catalogLocations = await fetch(
+        `${backendBaseUrl}/api/catalog/entities?filter=kind=location,spec.type=file`,
         {
           method: 'GET',
+          headers: {
+            Authorization: `Bearer ${(await credentials).token}`,
+          },
+        },
+      );
+      const locationsJSON = await catalogLocations.json();
+      let entityRef = '';
+      locationsJSON.forEach((r: any) => {
+        if (r.spec.target.includes('org.yaml')) {
+          entityRef = `location:${r.metadata.namespace}/${r.metadata.name}`;
+        }
+      });
+
+      const refreshResponse = await fetch(
+        `${backendBaseUrl}/api/catalog/refresh`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${(await credentials).token}`,
+          },
+          body: JSON.stringify({ entityRef: entityRef }),
         },
       );
 
-      if (registerResponse.ok) {
+      if (!refreshResponse.ok) {
+        console.error('Failed to refresh:', await refreshResponse.text());
         alertApi.post({
-          message: 'User entity registered in catalog successfully!',
-          severity: 'success',
+          message: 'Saved user but failed to refresh',
+          severity: 'warning',
           display: 'transient',
         });
       } else {
-        console.error('Failed to register:', await registerResponse.text());
-
         alertApi.post({
-          message: 'YAML saved, but catalog registration failed.',
-          severity: 'error',
+          message: 'Saved user successfully!',
+          severity: 'success',
           display: 'transient',
         });
       }
     } catch (err) {
-      console.error('Error saving YAML:', err);
+      console.error('Error saving user:', err);
       alertApi.post({
-        message: 'Error saving YAML!',
+        message: 'Error saving the user detials!',
         severity: 'error',
         display: 'transient',
       });
@@ -131,6 +235,8 @@ export const CreateUserForm = () => {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleChange('name', e.target.value)
             }
+            placeholder="Letters and Numbers separated by [-_]"
+            required
           />
           <TextField
             label="Display Name"
@@ -138,6 +244,7 @@ export const CreateUserForm = () => {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleChange('displayName', e.target.value)
             }
+            placeholder="Enter Display Name"
           />
           <TextField
             label="Email"
@@ -145,6 +252,8 @@ export const CreateUserForm = () => {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleChange('email', e.target.value)
             }
+            placeholder="Enter a valid email"
+            required
           />
           <TextField
             label="Picture URL"
@@ -152,6 +261,7 @@ export const CreateUserForm = () => {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleChange('picture', e.target.value)
             }
+            placeholder="Enter a valid image URL"
           />
           <TextField
             label="GitHub Username"
@@ -159,6 +269,8 @@ export const CreateUserForm = () => {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleChange('github', e.target.value)
             }
+            placeholder="Enter a valid github username"
+            required
           />
           <FormControl variant="outlined" margin="normal">
             <Select
@@ -167,8 +279,9 @@ export const CreateUserForm = () => {
                 handleChange('groups', e as string | string[]);
               }}
               selected={form.groups}
-              items={groupOptions}
+              items={groups}
               multiple
+              placeholder="Select groups"
             />
           </FormControl>
           <Box marginTop={1}>

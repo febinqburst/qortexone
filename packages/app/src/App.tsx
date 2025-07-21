@@ -43,8 +43,6 @@ import {
   AddUserPage,
   AddGroupPage,
 } from '@internal/plugin-user-group-manager';
-import { UnifiedThemeProvider } from '@backstage/theme';
-import { qbDark, qbLight } from './theme/qbTheme';
 
 const app = createApp({
   apis,
