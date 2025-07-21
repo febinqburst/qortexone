@@ -81,7 +81,7 @@ export const CreateUserForm = () => {
     const { name, displayName, github, email, picture, groups } = form;
 
     if (!name || !github || !email) {
-      console.error('Missing form fields');
+      console.error('Missing required form fields');
       alertApi.post({
         message: 'Missing form fields',
         severity: 'error',
@@ -90,13 +90,18 @@ export const CreateUserForm = () => {
       return;
     }
 
+    const regExpMap = {
+      name: new RegExp(/^[a-zA-Z](?:[a-zA-Z0-9_-]*[a-zA-Z0-9])?$/),
+      email: new RegExp(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/),
+      picture: new RegExp(
+        /https?:\/\/(?:www\.)?[^\s]+(?:\.(?:jpg|jpeg|png|gif|bmp))?/,
+      ),
+    };
+
     if (
-      (name && /^[a-zA-Z0-9]+([_-][a-zA-Z0-9]+)*$/.test(name)) ||
-      (picture &&
-        !/https?:\/\/(?:www\.)?[^\s]+(?:\.(?:jpg|jpeg|png|gif|bmp))?/.test(
-          picture,
-        )) ||
-      (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email))
+      (name && !regExpMap.name.test(name)) ||
+      (picture && !regExpMap.picture.test(picture)) ||
+      (email && !regExpMap.email.test(email))
     ) {
       console.error('Invalid form field(s)');
       alertApi.post({
@@ -150,7 +155,7 @@ export const CreateUserForm = () => {
   const saveToCatalog = async (yamlString: string) => {
     try {
       const appendResponse = await fetch(
-        `${backendBaseUrl}/api/user-entity/add`,
+        `${backendBaseUrl}/api/user-group-entity/add`,
         {
           method: 'POST',
           headers: {
